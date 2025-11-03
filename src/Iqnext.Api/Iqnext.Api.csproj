@@ -17,7 +17,6 @@
     <ProjectReference Include="..\IQData\IQData.csproj" />
     <ProjectReference Include="..\IQDTOs\IQDTOs.csproj" />
     <ProjectReference Include="..\IQEntities\IQEntities.csproj" />
-    <ProjectReference Include="..\IQModels\IQModels.csproj" />
     <ProjectReference Include="..\IQRepositories\IQRepositories.csproj" />
     <ProjectReference Include="..\IQServices\IQServices.csproj" />
   </ItemGroup>
