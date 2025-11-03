@@ -1,0 +1,6 @@
+@Iqnext.Api_HostAddress = http://localhost:5192
+
+GET {{Iqnext.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
