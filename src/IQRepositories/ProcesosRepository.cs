@@ -48,28 +48,42 @@ public sealed class ProcesosRepository : IProcesosRepository
 
     public async Task<EjecucionDto> RegistrarEjecucionAsync(RegistrarEjecucionReq req, CancellationToken ct)
     {
-        const string exists = "SELECT 1 FROM dbo.proceso WHERE id=@id";
+        const string findProceso = "SELECT id FROM dbo.proceso WHERE uuid = @uuid";
         const string insert = """
-            INSERT INTO dbo.ejecucion (procesoId, fechaHora, estatus)
-            VALUES (@ProcesoId, COALESCE(@FechaHora, SYSUTCDATETIME()), COALESCE(@Estatus, 0));
-            SELECT CAST(SCOPE_IDENTITY() AS INT);
-        """;
+        INSERT INTO dbo.ejecucion (procesoId, fechaHora, estatus)
+        VALUES (@ProcesoId, COALESCE(@FechaHora, SYSUTCDATETIME()), COALESCE(@Estatus, 0));
+        SELECT CAST(SCOPE_IDENTITY() AS INT);
+    """;
         const string get = """
-            SELECT id AS Id, procesoId AS ProcesoId, fechaHora AS FechaHora, estatus AS Estatus
-            FROM dbo.ejecucion
-            WHERE id = @id
-        """;
+        SELECT
+            id            AS Id,
+            procesoId     AS ProcesoId,
+            fechaHora     AS FechaHora,
+            CAST(estatus AS TINYINT) AS Estatus
+        FROM dbo.ejecucion
+        WHERE id = @id;
+    """;
 
         using var conn = _factory.Create();
         await conn.OpenAsync(ct);
 
-        var ok = await conn.ExecuteScalarAsync<int>(
-            new CommandDefinition(exists, new { id = req.ProcesoId }, cancellationToken: ct));
-        if (ok != 1) throw new KeyNotFoundException($"Proceso {req.ProcesoId} no existe.");
+        // 1) Resolver procesoId por uuid
+        var procesoId = await conn.ExecuteScalarAsync<int?>(
+            new CommandDefinition(findProceso, new { uuid = req.Uuid }, cancellationToken: ct));
 
+        if (procesoId is null)
+            throw new KeyNotFoundException($"No existe proceso con uuid '{req.Uuid}'.");
+
+        // 2) Insertar ejecución
         var newId = await conn.ExecuteScalarAsync<int>(
-            new CommandDefinition(insert, req, cancellationToken: ct));
+            new CommandDefinition(insert, new
+            {
+                ProcesoId = procesoId.Value,
+                req.FechaHora,
+                req.Estatus
+            }, cancellationToken: ct));
 
+        // 3) Devolver registro creado
         return await conn.QuerySingleAsync<EjecucionDto>(
             new CommandDefinition(get, new { id = newId }, cancellationToken: ct));
     }

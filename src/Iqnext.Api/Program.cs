@@ -1,3 +1,6 @@
+ï»¿using System.Net;                    // ðŸ‘ˆ para ForwardedHeaders
+using Microsoft.AspNetCore.HttpOverrides;
+
 using IQData;
 using IQRepositories;
 using IQRepositories.Interfaces;
@@ -6,23 +9,29 @@ using IQServices.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// CORS (dev)
-const string CorsPolicy = "DevCors";
+// CORS
+const string CorsPolicy = "IqnextCors";
+var allowedOrigins = new[]
+{
+    "http://localhost:4200",                 // dev
+    "https://automatizacion.iqnext.ai",      // prod (tu front pÃºblico)
+    "https://www.automatizacion.iqnext.ai"   // por si acaso
+};
+
 builder.Services.AddCors(opt =>
 {
     opt.AddPolicy(CorsPolicy, policy =>
-        policy.WithOrigins("http://localhost:4200")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-        // .AllowCredentials() // solo si usas cookies/autenticación
-        );
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+    // .AllowCredentials() 
+    );
 });
 
-// Bind de cadena de conexión
 builder.Services.Configure<DbSettings>(opt =>
     opt.Default = builder.Configuration.GetConnectionString("Default"));
 
-// IoC
 builder.Services.AddSingleton<DbConnectionFactory>();
 builder.Services.AddScoped<IProcesosRepository, ProcesosRepository>();
 builder.Services.AddScoped<IProcesosService, ProcesosService>();
@@ -32,14 +41,16 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto
+});
 
 app.UseSwagger();
 app.UseSwaggerUI();
-
-// Redirección a HTTPS (opcional; si tu front llama por https)
 app.UseHttpsRedirection();
-
-// CORS antes de MapControllers
 app.UseCors(CorsPolicy);
 
 app.MapControllers();

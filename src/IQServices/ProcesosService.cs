@@ -20,9 +20,17 @@ public sealed class ProcesosService : IProcesosService
 
     public Task<EjecucionDto> RegistrarEjecucionAsync(RegistrarEjecucionReq req, CancellationToken ct)
     {
-        if (req.ProcesoId <= 0) throw new ArgumentException("ProcesoId es obligatorio y > 0");
+        if (string.IsNullOrWhiteSpace(req.Uuid))
+            throw new ArgumentException("Uuid es obligatorio.");
+
+        // valida formato (GUID)
+        if (!Guid.TryParse(req.Uuid, out _))
+            throw new ArgumentException("Uuid inválido (GUID esperado).");
+
         if (req.Estatus is not null && req.Estatus is not 0 and not 1)
             throw new ArgumentException("Estatus debe ser 0 o 1");
+
         return _repo.RegistrarEjecucionAsync(req, ct);
     }
+
 }

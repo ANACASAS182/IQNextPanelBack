@@ -9,10 +9,31 @@ namespace IQDTOs;
 public record EmpresaDto(int Id, string Rfc, string Nombre);
 public record ProcesoDto(int Id, int EmpresaId, string Nombre);
 public record EjecucionDto(int Id, int ProcesoId, DateTime FechaHora, byte Estatus);
-public record RegistrarEjecucionReq(int ProcesoId, DateTime? FechaHora, byte? Estatus);
+
+public record RegistrarEjecucionReq(
+    string Uuid,           
+    DateTime? FechaHora,
+    byte? Estatus
+);
+public sealed record RegistrarCurlDto(
+    int ProcesoId,
+    string Uuid,
+    string CurlEstatus1,
+    string CurlEstatus0
+);
+
 public sealed record LoginReq(string Correo,string Contrasena);
 
-public sealed record LoginResponseDto(bool Exito,string Mensaje,long? UsuarioId,int? EmpresaId,string? EmpresaNombre,string? Nombre,string? Correo);
+public sealed record LoginResponseDto(
+    bool Exito,
+    string Mensaje,
+    long? UsuarioId,
+    int? EmpresaId,
+    string? EmpresaNombre,
+    string? Nombre,
+    string? Correo,
+    bool EsAdmin   // 👈 nuevo campo en la respuesta
+);
 
 public sealed record CrearUsuarioEmpresaReq(
       int EmpresaId,
@@ -27,6 +48,9 @@ public sealed record UsuarioEmpresaDto(
     string Correo,
     string? Nombre
 );
+// DTOs
+public sealed record CrearProcesoReq(int EmpresaId, string Nombre);
+public sealed record ProcesoCreadoDto(int Id, int EmpresaId, string Nombre, string Uuid);
 
 public sealed class UsuarioEmpresaLoginRow
 {
@@ -36,7 +60,9 @@ public sealed class UsuarioEmpresaLoginRow
     public string? Nombre { get; set; }
     public string ContrasenaHash { get; set; } = default!;
     public string EmpresaNombre { get; set; } = default!;
+    public byte EsAdmin { get; set; }  // 👈 viene de TINYINT 0/1
 }
+
 public sealed class CambiarPasswordReq
 {
     public int EmpresaId { get; init; }
